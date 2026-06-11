@@ -13,6 +13,7 @@ import {
   Type,
   Shapes,
   Ruler,
+  Eraser,
   Undo2,
   Redo2,
 } from 'lucide-react';
@@ -91,6 +92,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       id: 'ruler',
       label: '자',
       icon: <Ruler className="w-7 h-7 stroke-[2.5]" />,
+    },
+    {
+      id: 'eraser',
+      label: '지우개',
+      icon: <Eraser className="w-7 h-7 stroke-[2.5]" />,
     },
   ];
 

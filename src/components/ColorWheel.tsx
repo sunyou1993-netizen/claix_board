@@ -323,13 +323,14 @@ export const ColorWheel: React.FC<ColorWheelProps> = ({ penColor, setPenColor })
         >
           {/* Circular slider knob pointer */}
           <div
-            className="absolute rounded-full border-2 border-white shadow-lg bg-slate-900 pointer-events-none"
+            className="absolute rounded-full border-4 border-white shadow-xl pointer-events-none transition-colors duration-100"
             style={{
               left: '50%',
               top: `${(1.0 - hsv.v) * 100}%`,
               transform: 'translate(-50%, -50%)',
-              width: '36px',
-              height: '36px',
+              width: '46px',
+              height: '46px',
+              backgroundColor: penColor,
             }}
           />
         </div>

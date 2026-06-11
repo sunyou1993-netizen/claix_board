@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Share2, X, ChevronLeft } from 'lucide-react';
+import { Share2, X } from 'lucide-react';
 
 interface HeaderProps {
   onShare: () => void;
@@ -19,15 +19,8 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   return (
     <div className="w-full h-[120px] flex items-center justify-between px-6 bg-transparent select-none" id="btn-header-container">
-      {/* Left Back Button + App Title */}
+      {/* App Title */}
       <div className="flex items-center gap-4">
-        <button
-          onClick={onClose}
-          className="p-1 text-slate-800 hover:bg-white/50 active:bg-white/80 rounded-full transition-all duration-200"
-          id="btn-back"
-        >
-          <ChevronLeft className="w-[52px] h-[52px] stroke-[2.5]" />
-        </button>
         <span className="text-[52px] font-semibold text-slate-900 tracking-tight leading-none" id="app-title">
           {title}
         </span>

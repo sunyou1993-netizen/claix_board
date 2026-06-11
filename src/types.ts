@@ -47,20 +47,22 @@ export type BackgroundType = 'plain' | 'grid' | 'lined' | 'english' | 'blackboar
 
 export type TapeType =
   | 'stripes'
-  | 'polka_dot'
   | 'solid_blue'
   | 'solid_yellow'
-  | 'checkerboard'
-  | 'stripes_yellow'
-  | 'hearts'
-  | 'stars'
-  | 'sky_cloud'
-  | 'cherry'
-  | 'rainbow_tape'
-  | 'galaxy'
-  | 'retro_grid'
   | 'solid_green'
   | 'solid_pink'
+  | 'rainbow_tape'
+  | 'checkerboard'
+  | 'gingham_rose'
+  | 'tartan_indigo'
+  | 'diagonal_mint'
+  | 'polka_dot'
+  | 'hearts_pattern'
+  | 'stars_night'
+  | 'cloud_dream'
+  | 'daisy_garden'
+  | 'cherry_garden'
+  | 'retro_grid'
   | 'paw_prints';
 
 export interface CanvasElement {

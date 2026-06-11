@@ -12,9 +12,12 @@ import {
   CanvasElement,
   StampType,
   StickerType,
+  TapeType,
 } from '../types';
 import { StampRenderer } from './StampRenderer';
 import { StickerRenderer } from './StickerRenderer';
+import { getTapeStyle } from '../lib/tapeStyles';
+import { getNoteStyle } from '../lib/noteStyles';
 import { Trash2, Move, RotateCcw, X, Check, Edit2 } from 'lucide-react';
 
 interface WhiteboardProps {
@@ -41,6 +44,51 @@ interface WhiteboardProps {
   setSelectedRulerType: (type: 'line' | 'triangle' | 'circle') => void;
 }
 
+// Seedable pseudo-random number generator (Mulberry32)
+function createRandom(seed: number) {
+  let a = seed;
+  return function() {
+    let t = a += 0x6D2B79F5;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function getSeedFromId(id: string): number {
+  let hash = 0;
+  if (!id) return 123456789;
+  for (let i = 0; i < id.length; i++) {
+    const char = id.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return Math.abs(hash) || 123456789;
+}
+
+// Calculate shortest distance from point p to line segment ab
+function getDistanceToSegment(p: Point, a: Point, b: Point): number {
+  const abX = b.x - a.x;
+  const abY = b.y - a.y;
+  const apX = p.x - a.x;
+  const apY = p.y - a.y;
+  
+  const abLenSq = abX * abX + abY * abY;
+  if (abLenSq === 0) {
+    return Math.sqrt(apX * apX + apY * apY);
+  }
+  
+  let t = (apX * abX + apY * abY) / abLenSq;
+  t = Math.max(0, Math.min(1, t));
+  
+  const closestX = a.x + t * abX;
+  const closestY = a.y + t * abY;
+  
+  const dx = p.x - closestX;
+  const dy = p.y - closestY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
 export const Whiteboard: React.FC<WhiteboardProps> = ({
   activeTool,
   background,
@@ -65,6 +113,56 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentStroke, setCurrentStroke] = useState<Point[]>([]);
 
+  const eraseStrokesAtSegment = (pA: Point, pB: Point) => {
+    const eraserRadius = 24; // Eraser size matching visual brush
+    let strokeChanged = false;
+    const updatedStrokes: Stroke[] = [];
+
+    strokes.forEach((stroke) => {
+      const segments: Point[][] = [];
+      let currentSegment: Point[] = [];
+
+      stroke.points.forEach((p) => {
+        const dist = getDistanceToSegment(p, pA, pB);
+        if (dist >= eraserRadius) {
+          currentSegment.push(p);
+        } else {
+          if (currentSegment.length > 0) {
+            segments.push(currentSegment);
+            currentSegment = [];
+          }
+          strokeChanged = true;
+        }
+      });
+
+      if (currentSegment.length > 0) {
+        segments.push(currentSegment);
+      }
+
+      if (segments.length === 0) {
+        // Entire stroke was erased
+        strokeChanged = true;
+      } else if (segments.length === 1 && segments[0].length === stroke.points.length) {
+        // Untouched
+        updatedStrokes.push(stroke);
+      } else {
+        // Split or shortened
+        segments.forEach((seg, idx) => {
+          updatedStrokes.push({
+            ...stroke,
+            id: `${stroke.id}_split_${idx}_${Math.random().toString().slice(2, 8)}`,
+            points: seg,
+          });
+        });
+        strokeChanged = true;
+      }
+    });
+
+    if (strokeChanged) {
+      setStrokes(updatedStrokes);
+    }
+  };
+
   // Dragging and Transform management for elements
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartOffset, setDragStartOffset] = useState<Point>({ x: 0, y: 0 });
@@ -82,6 +180,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
   // Shape and Ruler states
   const [shapeStartPt, setShapeStartPt] = useState<Point | null>(null);
   const [tempShapeBounds, setTempShapeBounds] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [hoverPt, setHoverPt] = useState<Point | null>(null);
 
   // Dimensions of the virtual canvas
   const VIRTUAL_WIDTH = 1200;
@@ -114,7 +213,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
   // Main drawing engine redraw trigger
   useEffect(() => {
     drawAll();
-  }, [strokes, background, elements, currentStroke]);
+  }, [strokes, background, elements, currentStroke, hoverPt]);
 
   const drawAll = () => {
     const canvas = canvasRef.current;
@@ -147,6 +246,25 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
       renderActiveStroke(ctx);
     }
 
+    // Render beautiful eraser circular contact guide HUD
+    if (activeTool === 'eraser' && hoverPt) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(239, 68, 68, 0.7)'; // soft red Outline
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]); // dashed ring representation
+      ctx.beginPath();
+      ctx.arc(hoverPt.x, hoverPt.y, 24, 0, 2 * Math.PI); // 24px radius
+      ctx.stroke();
+
+      // soft semi-transparent core filled shape
+      ctx.fillStyle = 'rgba(244, 63, 94, 0.08)';
+      ctx.beginPath();
+      ctx.arc(hoverPt.x, hoverPt.y, 24, 0, 2 * Math.PI);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
     ctx.restore();
   };
 
@@ -159,9 +277,10 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
       // Blackboard dusty context decoration
       ctx.fillStyle = '#ffffff';
       ctx.globalAlpha = 0.02;
+      const bgRng = createRandom(123456);
       for (let i = 0; i < 30; i++) {
         ctx.beginPath();
-        ctx.arc(Math.random() * VIRTUAL_WIDTH, Math.random() * VIRTUAL_HEIGHT, 10 + Math.random() * 80, 0, Math.PI * 2);
+        ctx.arc(bgRng() * VIRTUAL_WIDTH, bgRng() * VIRTUAL_HEIGHT, 10 + bgRng() * 80, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.globalAlpha = 1.0;
@@ -176,7 +295,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
       ctx.fillRect(0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
     }
 
-    // 2. Multi-background templates
+    // ... templates
     if (background === 'grid') {
       // Small blue coordinate grids
       ctx.strokeStyle = 'rgba(156,170,236,0.18)';
@@ -277,12 +396,13 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
       // Kraft paper texture fibers
       ctx.strokeStyle = 'rgba(255,255,255,0.12)';
       ctx.lineWidth = 0.8;
+      const bgRng = createRandom(654321);
       for (let i = 0; i < 75; i++) {
         ctx.beginPath();
-        const lx = Math.random() * VIRTUAL_WIDTH;
-        const ly = Math.random() * VIRTUAL_HEIGHT;
+        const lx = bgRng() * VIRTUAL_WIDTH;
+        const ly = bgRng() * VIRTUAL_HEIGHT;
         ctx.moveTo(lx, ly);
-        ctx.lineTo(lx + Math.random() * 20 - 10, ly + Math.random() * 8 - 4);
+        ctx.lineTo(lx + bgRng() * 20 - 10, ly + bgRng() * 8 - 4);
         ctx.stroke();
       }
     } else if (background === 'manuscript') {
@@ -330,9 +450,15 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
     type: string,
     color: string,
     width: number,
-    opacity: number
+    opacity: number,
+    strokeSeed?: string | number
   ) => {
     if (points.length < 2) return;
+    const seedNum = typeof strokeSeed === 'number' 
+      ? strokeSeed 
+      : getSeedFromId(strokeSeed || 'default_stroke_seed');
+    const rng = createRandom(seedNum);
+
     ctx.save();
     ctx.strokeStyle = color;
     ctx.lineWidth = width;
@@ -361,12 +487,12 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
       // Seed beautiful hair distribution inside the brush head radius
       for (let b = 0; b < bristleCount; b++) {
         const angle = (b / bristleCount) * Math.PI * 2;
-        const distance = (0.15 + Math.random() * 0.8) * (width * 0.42);
+        const distance = (0.15 + rng() * 0.8) * (width * 0.42);
         bristles.push({
           dx: Math.cos(angle) * distance,
           dy: Math.sin(angle) * distance,
-          alpha: 0.3 + Math.random() * 0.5,
-          weight: 0.45 + Math.random() * 0.55
+          alpha: 0.3 + rng() * 0.5,
+          weight: 0.45 + rng() * 0.55
         });
       }
 
@@ -437,10 +563,10 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
       ctx.globalAlpha = opacity * 0.38;
       
       for (let lineOffset = 0; lineOffset < 3; lineOffset++) {
-        const rx = (Math.random() - 0.5) * (width * 0.18);
-        const ry = (Math.random() - 0.5) * (width * 0.18);
+        const rx = (rng() - 0.5) * (width * 0.18);
+        const ry = (rng() - 0.5) * (width * 0.18);
         
-        ctx.setLineDash([1.8, Math.max(1.2, width * (0.35 + Math.random() * 0.45))]);
+        ctx.setLineDash([1.8, Math.max(1.2, width * (0.35 + rng() * 0.45))]);
         ctx.beginPath();
         ctx.moveTo(points[0].x + rx, points[0].y + ry);
         for (let i = 1; i < points.length - 1; i++) {
@@ -472,21 +598,21 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
           
           const flakeDensity = Math.max(3, Math.floor(width / 2.2));
           for (let p = 0; p < flakeDensity; p++) {
-            const angle = Math.random() * Math.PI * 2;
-            const distanceRatio = Math.pow(Math.random(), 1.6); // heavily dynamic cluster concentration
+            const angle = rng() * Math.PI * 2;
+            const distanceRatio = Math.pow(rng(), 1.6); // heavily dynamic cluster concentration
             const r = distanceRatio * (width * 0.58);
             const px = cx + Math.cos(angle) * r;
             const py = cy + Math.sin(angle) * r;
             
-            const crumbSize = 0.8 + Math.random() * (width * 0.32);
-            ctx.globalAlpha = opacity * (0.12 + Math.random() * 0.78);
+            const crumbSize = 0.8 + rng() * (width * 0.32);
+            ctx.globalAlpha = opacity * (0.12 + rng() * 0.78);
             ctx.beginPath();
             
             // Render non-uniform wax textures using ellipse or arc
             if (p % 2 === 0) {
               const rx = crumbSize / 2;
-              const ry = crumbSize * (0.35 + Math.random() * 0.45);
-              const rot = Math.random() * Math.PI;
+              const ry = crumbSize * (0.35 + rng() * 0.45);
+              const rot = rng() * Math.PI;
               ctx.ellipse(px, py, rx, ry, rot, 0, Math.PI * 2);
             } else {
               ctx.arc(px, py, crumbSize / 2, 0, Math.PI * 2);
@@ -497,7 +623,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
       }
       ctx.restore();
     } else if (type === 'rainbow') {
-      // Professional multi-band paint roller engine with porous foam bubbles and sponge edge bleeding
+      // Pristine smooth multi-band paint roller engine (texture-free, solid colors)
       const rainbowColors = [
         '#EF4444', // Red
         '#F97316', // Orange
@@ -507,152 +633,68 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
         '#8B5CF6'  // Purple
       ];
 
-      const stripeWidth = width / 4.4; // slight overlap for a blended wet paint-bead flow
+      const stripeWidth = width / 4.4; // slight overlap for a blended paint ribbon
 
-      for (let i = 0; i < points.length - 1; i++) {
-        const p1 = points[i];
-        const p2 = points[i + 1];
-        const dx = p2.x - p1.x;
-        const dy = p2.y - p1.y;
+      // Calculate normals for each point to prevent any disconnects or breaks
+      const normals: { x: number; y: number }[] = [];
+      for (let k = 0; k < points.length; k++) {
+        let dx = 0;
+        let dy = 0;
+        if (k === 0) {
+          dx = points[1].x - points[0].x;
+          dy = points[1].y - points[0].y;
+        } else if (k === points.length - 1) {
+          dx = points[k].x - points[k - 1].x;
+          dy = points[k].y - points[k - 1].y;
+        } else {
+          dx = points[k + 1].x - points[k - 1].x;
+          dy = points[k + 1].y - points[k - 1].y;
+        }
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 0.1) continue;
-
-        const nx = -dy / dist;
-        const ny = dx / dist;
-
-        ctx.save();
-        ctx.globalAlpha = opacity;
-        ctx.lineCap = 'butt'; // pristine segment transitions
-
-        // Draw individual colored paint lanes
-        rainbowColors.forEach((stripeColor, index) => {
-          const offsetRatio = index - (rainbowColors.length - 1) / 2;
-          const offsetDistance = offsetRatio * (width / rainbowColors.length);
-
-          const sp1x = p1.x + nx * offsetDistance;
-          const sp1y = p1.y + ny * offsetDistance;
-          const sp2x = p2.x + nx * offsetDistance;
-          const sp2y = p2.y + ny * offsetDistance;
-
-          ctx.beginPath();
-          ctx.strokeStyle = stripeColor;
-          ctx.lineWidth = stripeWidth;
-          ctx.moveTo(sp1x, sp1y);
-          ctx.lineTo(sp2x, sp2y);
-          ctx.stroke();
-        });
-        ctx.restore();
-
-        // 1. Sponge outer boundary bleeding
-        ctx.save();
-        const leftColor = rainbowColors[0];
-        const rightColor = rainbowColors[rainbowColors.length - 1];
-        
-        const edgeSteps = Math.max(1, Math.floor(dist / 2.2));
-        for (let e = 0; e <= edgeSteps; e++) {
-          const ratio = e / edgeSteps;
-          const cx = p1.x + dx * ratio;
-          const cy = p1.y + dy * ratio;
-
-          // Left border dabs
-          const leftOffset = -0.5 * width;
-          const lx = cx + nx * leftOffset;
-          const ly = cy + ny * leftOffset;
-          
-          ctx.fillStyle = leftColor;
-          ctx.globalAlpha = opacity * (0.32 + Math.random() * 0.58);
-          ctx.beginPath();
-          ctx.arc(lx + (Math.random() - 0.5) * (width * 0.14), ly + (Math.random() - 0.5) * (width * 0.14), 0.7 + Math.random() * 2.3, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Right border dabs
-          const rightOffset = 0.5 * width;
-          const rx = cx + nx * rightOffset;
-          const ry = cy + ny * rightOffset;
-          
-          ctx.fillStyle = rightColor;
-          ctx.globalAlpha = opacity * (0.32 + Math.random() * 0.58);
-          ctx.beginPath();
-          ctx.arc(rx + (Math.random() - 0.5) * (width * 0.14), ry + (Math.random() - 0.5) * (width * 0.14), 0.7 + Math.random() * 2.3, 0, Math.PI * 2);
-          ctx.fill();
+        if (dist < 0.1) {
+          normals.push(k > 0 ? normals[k - 1] : { x: 0, y: -1 });
+        } else {
+          normals.push({ x: -dy / dist, y: dx / dist });
         }
-        ctx.restore();
-
-        // 2. Realistic internal foam porous bubble voids
-        ctx.save();
-        const paperColor = background === 'blackboard' ? '#134E4A' : (background === 'kraft' ? '#E8C595' : '#FDFBF7');
-        ctx.fillStyle = paperColor;
-        
-        const bubbleDensity = Math.max(2, Math.floor(dist / 1.8));
-        for (let t = 0; t < bubbleDensity; t++) {
-          const ratio = t / bubbleDensity;
-          const cx = p1.x + dx * ratio;
-          const cy = p1.y + dy * ratio;
-
-          const bubblesPerStep = 2 + Math.floor(width / 5.5);
-          for (let b = 0; b < bubblesPerStep; b++) {
-            const angle = Math.random() * Math.PI * 2;
-            const r = Math.random() * (width * 0.43); // restrict inside roller track safely
-            const px = cx + Math.cos(angle) * r;
-            const py = cy + Math.sin(angle) * r;
-
-            const bubbleRadius = 0.6 + Math.random() * 2.3;
-            ctx.globalAlpha = opacity * (0.12 + Math.random() * 0.46);
-            ctx.beginPath();
-            ctx.arc(px, py, bubbleRadius, 0, Math.PI * 2);
-            ctx.fill();
-          }
-        }
-        ctx.restore();
       }
-    } else if (type === 'pen' || type === 'default' || !['dashed', 'calligraphy', 'crayon', 'rainbow', 'highlighter'].includes(type)) {
-      // Majestic fountain gel pen with ink accumulation hotspots & liquid gel-sheen dual core shading
-      // 1. Draw smooth fluid solid gel track
-      ctx.beginPath();
-      ctx.moveTo(points[0].x, points[0].y);
-      for (let i = 1; i < points.length - 1; i++) {
-        const xc = (points[i].x + points[i + 1].x) / 2;
-        const yc = (points[i].y + points[i + 1].y) / 2;
-        ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
-      }
-      ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
-      ctx.stroke();
 
-      // 2. Ink Core concentration (gorgeous liquid gel pen core shading effect)
       ctx.save();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = width * 0.68;
-      ctx.globalAlpha = opacity * 0.48;
-      ctx.beginPath();
-      ctx.moveTo(points[0].x, points[0].y);
-      for (let i = 1; i < points.length - 1; i++) {
-        const xc = (points[i].x + points[i + 1].x) / 2;
-        const yc = (points[i].y + points[i + 1].y) / 2;
-        ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
-      }
-      ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
-      ctx.stroke();
-      ctx.restore();
+      ctx.globalAlpha = opacity;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
 
-      // 3. Realistic wet ink pooling hotspots (ink accumulates heavily at the start, end, and sharp turning vertices)
-      ctx.save();
-      ctx.fillStyle = color;
-      ctx.globalAlpha = opacity * 0.28;
-      
-      // Wet start point pool
-      ctx.beginPath();
-      ctx.arc(points[0].x, points[0].y, width * 0.72, 0, Math.PI * 2);
-      ctx.fill();
+      // Draw individual continuous colored paint lanes
+      rainbowColors.forEach((stripeColor, index) => {
+        const offsetRatio = index - (rainbowColors.length - 1) / 2;
+        const offsetDistance = offsetRatio * (width / rainbowColors.length);
 
-      // Intermediate turning & endpoint pools
-      const poolInterval = Math.max(1, Math.floor(points.length / 4.5));
-      for (let i = poolInterval; i < points.length; i += poolInterval) {
-        const p = points[Math.min(i, points.length - 1)];
         ctx.beginPath();
-        ctx.arc(p.x, p.y, width * 0.64, 0, Math.PI * 2);
-        ctx.fill();
-      }
+        ctx.strokeStyle = stripeColor;
+        ctx.lineWidth = stripeWidth;
+
+        const firstPtX = points[0].x + normals[0].x * offsetDistance;
+        const firstPtY = points[0].y + normals[0].y * offsetDistance;
+        ctx.moveTo(firstPtX, firstPtY);
+
+        for (let k = 1; k < points.length; k++) {
+          const ptX = points[k].x + normals[k].x * offsetDistance;
+          const ptY = points[k].y + normals[k].y * offsetDistance;
+          ctx.lineTo(ptX, ptY);
+        }
+        ctx.stroke();
+      });
       ctx.restore();
+    } else if (type === 'pen' || type === 'default' || !['dashed', 'calligraphy', 'crayon', 'rainbow', 'highlighter'].includes(type)) {
+      // Just a clean, beautiful and smooth gel pen line using quadratic curves
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length - 1; i++) {
+        const xc = (points[i].x + points[i + 1].x) / 2;
+        const yc = (points[i].y + points[i + 1].y) / 2;
+        ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+      }
+      ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
+      ctx.stroke();
     } else {
       ctx.beginPath();
       ctx.moveTo(points[0].x, points[0].y);
@@ -670,7 +712,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
 
   const renderStrokes = (ctx: CanvasRenderingContext2D) => {
     strokes.forEach((stroke) => {
-      drawSingleStroke(ctx, stroke.points, stroke.type, stroke.color, stroke.width, stroke.opacity);
+      drawSingleStroke(ctx, stroke.points, stroke.type, stroke.color, stroke.width, stroke.opacity, stroke.id);
     });
   };
 
@@ -965,14 +1007,28 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
   };
 
   const renderActiveStroke = (ctx: CanvasRenderingContext2D) => {
-    drawSingleStroke(
-      ctx,
-      currentStroke,
-      activeTool === 'highlighter' ? 'highlighter' : brushType,
-      penColor,
-      penWidth,
-      penOpacity
-    );
+    if (activeTool === 'eraser') {
+      // Draw a soft translucent pink-rose eraser trail representation
+      drawSingleStroke(
+        ctx,
+        currentStroke,
+        'eraser',
+        'rgba(244, 63, 94, 0.25)', // beautiful translucent rose
+        48, // 48px thick visual representation matching eraser 24px radius
+        1.0,
+        "active_eraser_stroke"
+      );
+    } else {
+      drawSingleStroke(
+        ctx,
+        currentStroke,
+        activeTool === 'highlighter' ? 'highlighter' : brushType,
+        penColor,
+        penWidth,
+        penOpacity,
+        "active_drawing_stroke"
+      );
+    }
   };
 
   // Convert browser cursor client space to virtual coordinate bounds
@@ -1105,6 +1161,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
       // If clicked empty space, start eraser stroke which allows drawing an eraser trail
       setIsDrawing(true);
       setCurrentStroke([pt]);
+      eraseStrokesAtSegment(pt, pt);
       return;
     }
 
@@ -1170,6 +1227,13 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
 
     const pt = getVirtualCoordinates(e);
 
+    // Track cursor location for drawing special cues (like eraser ring)
+    if (activeTool === 'eraser') {
+      setHoverPt(pt);
+    } else if (hoverPt !== null) {
+      setHoverPt(null);
+    }
+
     // Dynamic Shape Move
     if (isDrawing && activeTool === 'shape' && shapeStartPt) {
       const minX = Math.min(shapeStartPt.x, pt.x);
@@ -1221,21 +1285,10 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
       return;
     }
 
-    // 2. Drag Eraser interaction with drawn marks
+    // 2. Drag Eraser interaction with drawn marks - Splits segments to erase touched coordinates only!
     if (isDrawing && activeTool === 'eraser') {
-      // Find if we hit any drawn strokes and filter them out
-      const hitStrokeIndex = strokes.findIndex((stroke) => {
-        return stroke.points.some((p) => {
-          const dist = Math.sqrt((p.x - pt.x) ** 2 + (p.y - pt.y) ** 2);
-          return dist < 18; // Eraser hitbox size
-        });
-      });
-
-      if (hitStrokeIndex !== -1) {
-        const copy = [...strokes];
-        copy.splice(hitStrokeIndex, 1);
-        setStrokes(copy);
-      }
+      const pA = currentStroke.length > 0 ? currentStroke[currentStroke.length - 1] : pt;
+      eraseStrokesAtSegment(pA, pt);
     }
 
     // 3. Drawing strokes
@@ -1330,6 +1383,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
     setIsResizing(false);
     setIsRotating(false);
     setIsDragging(false);
+    setHoverPt(null);
   };
 
   // HANDLERS FOR THE ACTIVE ELEMENT BOUNCING EXTRAS (RESIZE, ROTATE, DELETE)
@@ -1636,123 +1690,58 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
                 </div>
               )}
 
-              {el.type === 'note' && (
-                <div
-                  className="w-full h-full p-3.5 shadow-md border rounded-xl flex flex-col justify-between"
-                  style={{
-                    backgroundColor: el.bgColor || '#FEF08A',
-                    borderColor: el.bgColor === '#FEF08A' ? '#FDE047' : '#E2E8F0',
-                  }}
-                >
-                  <div className="w-full h-1 bg-black/5 rounded-full mb-1" />
-                  {isEditing ? (
-                    <div className="flex-1 flex flex-col justify-between">
-                      <textarea
-                        value={editingValue}
-                        onChange={(e) => setEditingValue(e.target.value)}
-                        className="w-full flex-1 bg-transparent border-none focus:outline-none text-xs font-semibold text-slate-800 resize-none h-full focus:ring-0 leading-tight"
-                        autoFocus
-                      />
-                      <button
-                        onClick={handleTextEditSave}
-                        className="self-end p-0.5 bg-white border border-slate-200 rounded text-[10px] font-bold text-green-600 shadow-sm flex items-center gap-0.5"
+              {el.type === 'note' && (() => {
+                const noteStyle = getNoteStyle(el.bgColor || '#FEF08A');
+                return (
+                  <div
+                    className="w-full h-full p-3.5 border rounded-xl flex flex-col justify-between"
+                    style={{
+                      background: noteStyle.background,
+                      borderColor: noteStyle.borderColor,
+                      boxShadow: noteStyle.boxShadow || '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+                      backgroundSize: el.bgColor === 'memo_daisy' || el.bgColor === 'memo_stars' ? '30px 30px' : el.bgColor === 'memo_gingham' ? '16px 16px' : el.bgColor === 'memo_kraft' || el.bgColor === 'memo_grid_blue' ? '15px 15px' : el.bgColor === 'memo_polka' ? '12px 12px' : 'auto',
+                    }}
+                  >
+                    <div className="w-full h-1 rounded-full mb-1" style={{ backgroundColor: noteStyle.badgeLineColor }} />
+                    {isEditing ? (
+                      <div className="flex-1 flex flex-col justify-between">
+                        <textarea
+                          value={editingValue}
+                          onChange={(e) => setEditingValue(e.target.value)}
+                          className="w-full flex-1 bg-transparent border-none focus:outline-none text-xs font-semibold resize-none h-full focus:ring-0 leading-tight"
+                          style={{ color: noteStyle.textColor, fontFamily: noteStyle.fontFamily || 'inherit' }}
+                          autoFocus
+                        />
+                        <button
+                          onClick={handleTextEditSave}
+                          className="self-end p-0.5 bg-white border border-slate-200 rounded text-[10px] font-bold text-green-600 shadow-sm flex items-center gap-0.5"
+                        >
+                          <Check className="w-3 h-3" /> 완료
+                        </button>
+                      </div>
+                    ) : (
+                      <div 
+                        className="flex-1 text-left text-xs font-bold leading-tight break-all overflow-hidden"
+                        style={{ color: noteStyle.textColor, fontFamily: noteStyle.fontFamily || 'monospace' }}
                       >
-                        <Check className="w-3 h-3" /> 완료
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex-1 text-left text-xs font-bold text-slate-800 leading-tight break-all overflow-hidden font-mono">
-                      {el.value}
-                    </div>
-                  )}
-                  <span className="text-[8px] font-extrabold text-black/35 text-right tracking-tight font-mono mt-1">
-                    double-click to edit
-                  </span>
-                </div>
-              )}
+                        {el.value}
+                      </div>
+                    )}
+                    <span 
+                      className="text-[8px] font-extrabold text-right tracking-tight mt-1"
+                      style={{ color: noteStyle.textColor, opacity: 0.4, fontFamily: 'monospace' }}
+                    >
+                      double-click to edit
+                    </span>
+                  </div>
+                );
+              })()}
 
               {/* RANDOMLY CUSTOM PAPERS like Goal charts or Checklists */}
               {el.type === 'tape' && (
                 <div
                   className={`w-full h-full opacity-80 shadow-sm rounded flex items-center justify-center overflow-hidden border border-white/40`}
-                  style={{
-                    backgroundImage:
-                      el.subType === 'stripes'
-                        ? 'linear-gradient(45deg, #FF6B6B 25%, #F0F3F4 25%, #F0F3F4 50%, #FF6B6B 50%, #FF6B6B 75%, #F0F3F4 75%, #F0F3F4 100%)'
-                        : el.subType === 'stripes_yellow'
-                        ? 'linear-gradient(45deg, #FBBF24 25%, #FEF08A 25%, #FEF08A 50%, #FBBF24 50%, #FBBF24 75%, #FEF08A 75%, #FEF08A 100%)'
-                        : el.subType === 'polka_dot'
-                        ? 'radial-gradient(#ffffff 15%, transparent 15%)'
-                        : el.subType === 'hearts'
-                        ? 'radial-gradient(#F43F5E 25%, transparent 25%)'
-                        : el.subType === 'stars'
-                        ? 'radial-gradient(#FBBF24 20%, transparent 20%)'
-                        : el.subType === 'sky_cloud'
-                        ? 'radial-gradient(#ffffff 30%, transparent 30%)'
-                        : el.subType === 'cherry'
-                        ? 'radial-gradient(#EF4444 32%, transparent 32%), radial-gradient(#10B981 28%, transparent 28%)'
-                        : el.subType === 'rainbow_tape'
-                        ? 'linear-gradient(90deg, #F87171, #FBBF24, #34D399, #60A5FA, #A78BFA)'
-                        : el.subType === 'galaxy'
-                        ? 'radial-gradient(#ffffff 12%, transparent 12%), radial-gradient(#F59E0B 10%, transparent 10%)'
-                        : el.subType === 'retro_grid'
-                        ? 'linear-gradient(rgba(16,185,129,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.3) 1px, transparent 1px)'
-                        : el.subType === 'paw_prints'
-                        ? 'radial-gradient(#78350F 35%, transparent 35%), radial-gradient(#78350F 25%, transparent 25%)'
-                        : 'none',
-                    backgroundColor:
-                      el.subType === 'stripes' || el.subType === 'stripes_yellow' || el.subType === 'rainbow_tape'
-                        ? 'transparent'
-                        : el.subType === 'polka_dot'
-                        ? '#006CFF'
-                        : el.subType === 'hearts'
-                        ? '#FBCFE8'
-                        : el.subType === 'stars'
-                        ? '#8B5CF6'
-                        : el.subType === 'sky_cloud'
-                        ? '#38BDF8'
-                        : el.subType === 'cherry'
-                        ? '#FEE2E2'
-                        : el.subType === 'galaxy'
-                        ? '#1E1B4B'
-                        : el.subType === 'retro_grid'
-                        ? '#F8FAFC'
-                        : el.subType === 'solid_green'
-                        ? '#5B8C5A'
-                        : el.subType === 'solid_pink'
-                        ? '#F472B6'
-                        : el.subType === 'paw_prints'
-                        ? '#FEF3C7'
-                        : el.bgColor || '#F59E0B',
-                    backgroundSize:
-                      el.subType === 'stripes' || el.subType === 'stripes_yellow'
-                        ? '14px 14px'
-                        : el.subType === 'polka_dot'
-                        ? '6px 6px'
-                        : el.subType === 'hearts'
-                        ? '10px 10px'
-                        : el.subType === 'stars'
-                        ? '12px 12px'
-                        : el.subType === 'sky_cloud'
-                        ? '16px 16px'
-                        : el.subType === 'cherry'
-                        ? '18px 18px, 18px 18px'
-                        : el.subType === 'retro_grid'
-                        ? '12px 12px'
-                        : el.subType === 'galaxy'
-                        ? '20px 20px, 20px 20px'
-                        : el.subType === 'paw_prints'
-                        ? '22px 22px, 22px 22px'
-                        : 'auto',
-                    backgroundPosition:
-                      el.subType === 'cherry'
-                        ? '0px 0px, 4px 4px'
-                        : el.subType === 'galaxy'
-                        ? '0px 0px, 10px 10px'
-                        : el.subType === 'paw_prints'
-                        ? '0px 0px, 6px 4px'
-                        : 'auto',
-                  }}
+                  style={getTapeStyle(el.subType as TapeType)}
                 />
               )}
 
@@ -2014,7 +2003,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
                   )}
 
                   {/* Handle D: Quick Color Accent Cycle (Bottom-Left) */}
-                  {el.type !== 'sticker' && el.type !== 'stamp' && el.type !== 'ruler' && (
+                  {(el.type === 'note' || el.type === 'text') && (
                     <button
                       onMouseDown={(e) => {
                         e.stopPropagation();

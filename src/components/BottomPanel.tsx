@@ -14,6 +14,8 @@ import {
 import { StampRenderer } from './StampRenderer';
 import { StickerRenderer } from './StickerRenderer';
 import { ColorWheel } from './ColorWheel';
+import { tapeList, getTapeStyle } from '../lib/tapeStyles';
+import { getNoteStyle } from '../lib/noteStyles';
 import { Trash2, Plus, PenTool, Flame, RefreshCcw } from 'lucide-react';
 
 // Realistic standing pencils, pens, and markers (Standing Pen Tray)
@@ -23,7 +25,7 @@ const StandingPen: React.FC<{ color: string; isSelected: boolean }> = ({ color, 
     <rect x="25" y="70" width="3" height="30" rx="1.5" fill="url(#metallicSilver)" />
     <circle cx="26.5" cy="100" r="2.5" fill="#334155" />
     
-    {/* Main Body (Glossy Royal Blue 3D Barrel) */}
+    {/* Main Body (Glossy Dark Gray 3D Barrel) */}
     <path d="M12 60 C12 60, 12 135, 12 135 C12 137.8, 15.6 140, 20 140 C24.4 140, 28 137.8, 28 135 C28 135, 28 60, 28 60 Z" fill="url(#blueBarrelGradient)" />
     
     {/* Reflections Overlay */}
@@ -48,11 +50,11 @@ const StandingPen: React.FC<{ color: string; isSelected: boolean }> = ({ color, 
 
     <defs>
       <linearGradient id="blueBarrelGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stopColor="#0F172A" />
-        <stop offset="25%" stopColor="#1E3A8A" />
-        <stop offset="50%" stopColor="#3B82F6" />
-        <stop offset="75%" stopColor="#1D4ED8" />
-        <stop offset="100%" stopColor="#172554" />
+        <stop offset="0%" stopColor="#1E293B" />
+        <stop offset="25%" stopColor="#334155" />
+        <stop offset="50%" stopColor="#64748B" />
+        <stop offset="75%" stopColor="#334155" />
+        <stop offset="100%" stopColor="#0F172A" />
       </linearGradient>
       <linearGradient id="goldBand" x1="0%" y1="0%" x2="100%" y2="0%">
         <stop offset="0%" stopColor="#854D0E" />
@@ -100,7 +102,6 @@ const StandingHighlighter: React.FC<{ color: string; isSelected: boolean }> = ({
     {/* Black plastic/matte textured neck sleeve */}
     <path d="M13 38 L27 38 L27 48 L13 48 Z" fill="url(#matteBlackSleeve)" />
     
-    {/* Felt chisel nib sticking out at top */}
     <path d="M15 38 L25 38 L24 20 L16 20 Z" fill="#E2E8F0" />
     
     {/* Pointed translucent neon tip dipped under color */}
@@ -108,11 +109,11 @@ const StandingHighlighter: React.FC<{ color: string; isSelected: boolean }> = ({
 
     <defs>
       <linearGradient id="highlighter3dBody" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stopColor="#D97706" />
-        <stop offset="25%" stopColor="#F59E0B" />
-        <stop offset="50%" stopColor="#FBBF24" />
-        <stop offset="75%" stopColor="#F59E0B" />
-        <stop offset="100%" stopColor="#92400E" />
+        <stop offset="0%" stopColor="#1E293B" />
+        <stop offset="25%" stopColor="#334155" />
+        <stop offset="50%" stopColor="#64748B" />
+        <stop offset="75%" stopColor="#334155" />
+        <stop offset="100%" stopColor="#0F172A" />
       </linearGradient>
       <linearGradient id="matteBlackSleeve" x1="0%" y1="0%" x2="100%" y2="0%">
         <stop offset="0%" stopColor="#0F172A" />
@@ -144,12 +145,14 @@ const StandingCalligraphy: React.FC<{ color: string; isSelected: boolean }> = ({
     <path d="M16 40 L24 40 L23 48 L17 48 Z" fill="url(#lacquerBlack)" />
     <rect x="16.5" y="40" width="7" height="1.5" fill="url(#goldBand)" />
 
-    {/* Soft goat-hair calligraphy brush bristles pointing up */}
-    <path d="M17 40 L23 40 C25 32, 24 22, 20 10 C16 22, 15 32, 17 40 Z" fill="url(#brushBristles)" stroke="#D1D5DB" strokeWidth="0.5" />
+    {/* Soft goat-hair calligraphy brush bristles pointing up, fully saturated with the selected active color */}
+    <path d="M17 40 L23 40 C25 32, 24 22, 20 10 C16 22, 15 32, 17 40 Z" fill={color} stroke="#D1D5DB" strokeWidth="0.5" />
     <path d="M18.5 40 C19.5 35, 19.5 25, 20 12 C19.5 25, 19.5 35, 18.5 40" stroke="#9CA3AF" strokeWidth="0.5" fill="none" opacity="0.5" />
     
-    {/* Fine tip saturated with dense dynamic painting ink */}
-    <path d="M18.8 28 C20.1 22, 20.1 16, 20 10 C19.9 16, 19.9 22, 18.1 28 Z" fill={color} />
+    {/* Fine tip heavily loaded with rich, wet dynamic painting ink of the active color */}
+    <path d="M17.4 34 C18.8 24, 19.5 15, 20 10 C20.5 15, 21.2 24, 22.6 34 Z" fill={color} />
+    {/* An extra beautiful glossy wet highlight on the saturated brush tip for physically loaded realism */}
+    <path d="M18.5 25 C19.0 20, 19.3 16, 19.6 12 C19.2 16, 18.8 20, 18.5 25 Z" fill="#FFFFFF" opacity="0.4" />
 
     <defs>
       <linearGradient id="bambooWood" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -182,14 +185,14 @@ const StandingCalligraphy: React.FC<{ color: string; isSelected: boolean }> = ({
 
 const StandingDashed: React.FC<{ color: string; isSelected: boolean }> = ({ color, isSelected }) => (
   <svg viewBox="0 0 40 140" className={`w-[84px] h-[155px] transition-all duration-300 drop-shadow-[0_6px_8px_rgba(0,0,0,0.12)] origin-bottom ${isSelected ? 'scale-110 drop-shadow-[0_12px_24px_rgba(0,0,0,0.2)]' : 'hover:scale-105 hover:-translate-y-0.5'}`}>
-    {/* Tech fineliner body (Matte Teal finish with gorgeous 3D cylindrical shader) */}
+    {/* Tech fineliner body (Matte Slate finish with gorgeous 3D cylindrical shader) */}
     <path d="M13 52 L27 52 L27 137 C27 138.5, 24 140, 20 140 C16 140, 13 138.5, 13 137 Z" fill="url(#finelinerBody)" />
     
     {/* Concentric Tech Ridley Grip Ridges */}
-    <rect x="13" y="115" width="14" height="2" fill="#042F2E" opacity="0.6" />
-    <rect x="13" y="120" width="14" height="2" fill="#042F2E" opacity="0.6" />
-    <rect x="13" y="125" width="14" height="2" fill="#042F2E" opacity="0.6" />
-    <rect x="13" y="130" width="14" height="2" fill="#042F2E" opacity="0.6" />
+    <rect x="13" y="115" width="14" height="2" fill="#0F172A" opacity="0.6" />
+    <rect x="13" y="120" width="14" height="2" fill="#0F172A" opacity="0.6" />
+    <rect x="13" y="125" width="14" height="2" fill="#0F172A" opacity="0.6" />
+    <rect x="13" y="130" width="14" height="2" fill="#0F172A" opacity="0.6" />
 
     {/* Technical specifications label */}
     <rect x="15" y="65" width="10" height="36" rx="1" fill="#FFFFFF" opacity="0.15" />
@@ -206,11 +209,11 @@ const StandingDashed: React.FC<{ color: string; isSelected: boolean }> = ({ colo
 
     <defs>
       <linearGradient id="finelinerBody" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stopColor="#042F2E" />
-        <stop offset="30%" stopColor="#0D9488" />
-        <stop offset="50%" stopColor="#2DD4BF" />
-        <stop offset="70%" stopColor="#0D9488" />
-        <stop offset="100%" stopColor="#115E59" />
+        <stop offset="0%" stopColor="#1E293B" />
+        <stop offset="25%" stopColor="#334155" />
+        <stop offset="50%" stopColor="#64748B" />
+        <stop offset="75%" stopColor="#334155" />
+        <stop offset="100%" stopColor="#0F172A" />
       </linearGradient>
       <linearGradient id="metallicSilver" x1="0%" y1="0%" x2="100%" y2="0%">
         <stop offset="0%" stopColor="#64748B" />
@@ -503,32 +506,22 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
     { id: 'graph', label: '정밀 수안방안', previewClass: 'bg-[#FDFBF7] bg-[linear-gradient(rgba(14,165,233,0.15)_0.5px,transparent_0.5px),linear-gradient(90deg,rgba(14,165,233,0.15)_0.5px,transparent_0.5px)] bg-[size:10px_10px] border border-slate-300' },
   ];
 
-  // Tape Options (마스킹 테이프)
-  const tapeList: { id: TapeType; label: string; preview: string }[] = [
-    { id: 'solid_blue', label: '밀크 블루', preview: 'bg-[#006CFF]' },
-    { id: 'solid_yellow', label: '레몬 옐로우', preview: 'bg-[#FFE200]' },
-    { id: 'stripes', label: '마린 스트라이프', preview: 'bg-[linear-gradient(45deg,#3B82F6_25%,#60A5FA_25%,#60A5FA_50%,#3B82F6_50%,#3B82F6_75%,#60A5FA_75%,#60A5FA_100%)] bg-[size:16px_16px]' },
-    { id: 'stripes_yellow', label: '꿀벌 옐로우', preview: 'bg-[linear-gradient(45deg,#FBBF24_25%,#FEF08A_25%,#FEF08A_50%,#FBBF24_50%,#FBBF24_75%,#FEF08A_75%,#FEF08A_100%)] bg-[size:16px_16px]' },
-    { id: 'polka_dot', label: '도트 테이프', preview: 'bg-[#EF4444] bg-[radial-gradient(#ffffff_20%,transparent_20%)] bg-[size:8px_8px]' },
-    { id: 'checkerboard', label: '체크 보드', preview: 'bg-slate-800 bg-[linear-gradient(45deg,#ccc_25%,transparent_25%,transparent_75%,#ccc_75%,#ccc_100%),linear-gradient(45deg,#ccc_25%,#888_25%,#888_75%,#ccc_75%,#ccc_100%)] bg-[size:12px_12px]' },
-    { id: 'hearts', label: '러블리 하트', preview: 'bg-[#FBCFE8] bg-[radial-gradient(#F43F5E_25%,transparent_25%)] bg-[size:10px_10px]' },
-    { id: 'stars', label: '보라 은하계', preview: 'bg-[#8B5CF6] bg-[radial-gradient(#FBBF24_20%,transparent_20%)] bg-[size:12px_12px]' },
-    { id: 'sky_cloud', label: '파란 구름', preview: 'bg-[#38BDF8] bg-[radial-gradient(#ffffff_30%,transparent_30%)] bg-[size:12px_12px]' },
-    { id: 'cherry', label: '체리 팝 테이프', preview: 'bg-[#FEE2E2] bg-[radial-gradient(#EF4444_20%,transparent_20%)] bg-[size:10px_10px]' },
-    { id: 'rainbow_tape', label: '무지개 구름 레일', preview: 'bg-[linear-gradient(90deg,#F87171,#FBBF24,#34D399,#60A5FA,#A78BFA)]' },
-    { id: 'galaxy', label: '은하수 스텔라', preview: 'bg-[#1E1B4B] bg-[radial-gradient(#ffffff_15%,transparent_15%)] bg-[size:10px_10px]' },
-    { id: 'retro_grid', label: '레트로 그린모눈', preview: 'bg-[#F8FAFC] bg-[linear-gradient(rgba(16,185,129,0.15)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.15)_1px,transparent_1px)] bg-[size:8px_8px]' },
-    { id: 'solid_green', label: '아보카도 소프트', preview: 'bg-[#5B8C5A]' },
-    { id: 'solid_pink', label: '스트로베리 크림', preview: 'bg-[#F472B6]' },
-    { id: 'paw_prints', label: '발자국 젤리펫', preview: 'bg-[#FEF3C7] bg-[radial-gradient(#78350F_20%,transparent_20%)] bg-[size:10px_10px]' },
-  ];
-
   // Paper/Note designs
   const paperList = [
     { id: 'memo_card_yellow', name: '노랑 스티키 메모', bg: '#FEF08A' },
     { id: 'memo_card_pink', name: '자주 스티키 메모', bg: '#FBCFE8' },
     { id: 'memo_card_blue', name: '하늘 스티키 메모', bg: '#BFDBFE' },
     { id: 'memo_card_green', name: '연두 스티키 메모', bg: '#BBF7D0' },
+    { id: 'memo_lavender', name: '🔮 크림 라벤더 메모', bg: '#E9D5FF' },
+    { id: 'memo_peach', name: '🍑 피치 망고 메모', bg: '#FFEDD5' },
+    { id: 'memo_slate', name: '♟️ 시크 모노 메모', bg: '#475569' },
+    { id: 'memo_rainbow', name: '🌈 오로라 스티키', bg: 'linear-gradient(135deg, #fef08a, #fbcfe8, #c084fc)' },
+    { id: 'memo_gingham', name: '🌸 러블리 깅엄 메모', bg: '#fce7f3' },
+    { id: 'memo_daisy', name: '🌼 데이지 가든 메모', bg: '#FEF9C3' },
+    { id: 'memo_stars', name: '⭐ 밤하늘 별빛 메모', bg: '#1e1b4b' },
+    { id: 'memo_kraft', name: '🪵 크라프트 격자 메모', bg: '#ebd5b3' },
+    { id: 'memo_grid_blue', name: '🌀 하늘 모눈 메모', bg: '#f0f9ff' },
+    { id: 'memo_polka', name: '🎈 빨간 도트 메모', bg: '#fee2e2' },
     { id: 'goal_box', name: '🎯 오늘의 목표 함', bg: '#FFFFFF' },
     { id: 'checklist', name: '📝 체크리스트 종이', bg: '#F8FAFC' },
   ];
@@ -744,7 +737,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
         )}
 
         {activeTab === 'stamp' && (
-          <div className="flex flex-col gap-6 h-full pb-44">
+          <div className="flex flex-col gap-6 h-full pb-72">
             {/* Category Tags for Stickers/Stamps */}
             <div className="flex gap-2 flex-wrap mb-2" id="sticker-tags-container">
               {[
@@ -835,11 +828,13 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
                 ))}
               </div>
             </div>
+            {/* Added extra scroll padding block */}
+            <div className="h-32 w-full shrink-0" />
           </div>
         )}
 
         {activeTab === 'background' && (
-          <div className="flex flex-col gap-7 h-full pb-44">
+          <div className="flex flex-col gap-7 h-full pb-72">
             <div className="grid grid-cols-2 gap-6" id="bg-grid-panel">
               {backgroundList.map((bg) => {
                 const isSelected = currentBg === bg.id;
@@ -859,11 +854,13 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
                 );
               })}
             </div>
+            {/* Added extra scroll padding block */}
+            <div className="h-32 w-full shrink-0" />
           </div>
         )}
 
         {activeTab === 'tape' && (
-          <div className="flex flex-col gap-6 h-full pb-44">
+          <div className="flex flex-col gap-6 h-full pb-72">
             <div className="grid grid-cols-2 gap-6" id="tape-grid-panel">
               {tapeList.map((tape) => (
                 <button
@@ -871,16 +868,18 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
                   onClick={() => onSelectTape(tape.id)}
                   className="bg-white hover:bg-slate-50 active:scale-98 border-2 border-slate-200 rounded-[24px] p-6 flex flex-col justify-between transition-all text-left cursor-pointer shadow-sm"
                 >
-                  <div className={`w-full h-8 rounded-lg shadow-inner mb-7 ${tape.preview}`} />
+                  <div className="w-full h-8 rounded-lg shadow-inner mb-7 border border-slate-200/50" style={getTapeStyle(tape.id)} />
                   <span className="text-xl font-normal text-slate-700 leading-none">{tape.label}</span>
                 </button>
               ))}
             </div>
+            {/* Added extra scroll padding block */}
+            <div className="h-32 w-full shrink-0" />
           </div>
         )}
 
         {activeTab === 'paper' && (
-          <div className="flex flex-col gap-6 h-full pb-44">
+          <div className="flex flex-col gap-6 h-full pb-72">
             <div className="grid grid-cols-2 gap-7" id="paper-grid-panel">
               {paperList.map((paper) => (
                 <button
@@ -889,10 +888,14 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
                   className="bg-white hover:bg-slate-50 active:scale-98 border-2 border-slate-200 rounded-[24px] p-7 flex flex-col gap-4 transition-all cursor-pointer shadow-sm"
                 >
                   <div
-                    className="w-full h-16 rounded-lg border border-slate-200/50 shadow-inner flex items-center justify-center text-[20px] font-normal text-slate-400"
-                    style={{ backgroundColor: paper.bg }}
+                    className="w-full h-16 rounded-lg border border-slate-200/50 shadow-inner flex items-center justify-center text-sm font-semibold tracking-wider opacity-90"
+                    style={{
+                      background: getNoteStyle(paper.id).background,
+                      color: getNoteStyle(paper.id).textColor,
+                      backgroundSize: paper.id === 'memo_daisy' || paper.id === 'memo_stars' ? '22px 22px' : paper.id === 'memo_gingham' ? '12px 12px' : paper.id === 'memo_kraft' || paper.id === 'memo_grid_blue' ? '12px 12px' : paper.id === 'memo_polka' ? '10px 10px' : 'auto'
+                    }}
                   >
-                    NOTE
+                    MEMO
                   </div>
                   <span className="text-xl font-normal text-slate-800 leading-none truncate w-full block">
                     {paper.name}
@@ -900,6 +903,8 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
                 </button>
               ))}
             </div>
+            {/* Added extra scroll padding block */}
+            <div className="h-32 w-full shrink-0" />
           </div>
         )}
       </div>

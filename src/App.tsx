@@ -279,7 +279,7 @@ export default function App() {
         rotation: 0,
         scale: 1.0,
         value: '여기에 기록을 남겨보세요.',
-        bgColor: param || '#FFFFFF',
+        bgColor: type || param || '#FFFFFF',
       };
     }
 
