@@ -18,7 +18,7 @@ import { Trash2, Plus, PenTool, Flame, RefreshCcw } from 'lucide-react';
 
 // Realistic standing pencils, pens, and markers (Standing Pen Tray)
 const StandingPen: React.FC<{ color: string; isSelected: boolean }> = ({ color, isSelected }) => (
-  <svg viewBox="0 0 40 140" className={`w-14 h-[150px] transition-all duration-300 drop-shadow-[0_6px_8px_rgba(0,0,0,0.12)] origin-bottom ${isSelected ? 'scale-110 drop-shadow-[0_12px_24px_rgba(0,0,0,0.2)]' : 'hover:scale-105 hover:-translate-y-0.5'}`}>
+  <svg viewBox="0 0 40 140" className={`w-[84px] h-[155px] transition-all duration-300 drop-shadow-[0_6px_8px_rgba(0,0,0,0.12)] origin-bottom ${isSelected ? 'scale-110 drop-shadow-[0_12px_24px_rgba(0,0,0,0.2)]' : 'hover:scale-105 hover:-translate-y-0.5'}`}>
     {/* Pen Clip */}
     <rect x="25" y="70" width="3" height="30" rx="1.5" fill="url(#metallicSilver)" />
     <circle cx="26.5" cy="100" r="2.5" fill="#334155" />
@@ -82,7 +82,7 @@ const StandingPen: React.FC<{ color: string; isSelected: boolean }> = ({ color, 
 );
 
 const StandingHighlighter: React.FC<{ color: string; isSelected: boolean }> = ({ color, isSelected }) => (
-  <svg viewBox="0 0 40 140" className={`w-14 h-[150px] transition-all duration-300 drop-shadow-[0_6px_8px_rgba(0,0,0,0.12)] origin-bottom ${isSelected ? 'scale-110 drop-shadow-[0_12px_24px_rgba(0,0,0,0.2)]' : 'hover:scale-105 hover:-translate-y-0.5'}`}>
+  <svg viewBox="0 0 40 140" className={`w-[84px] h-[155px] transition-all duration-300 drop-shadow-[0_6px_8px_rgba(0,0,0,0.12)] origin-bottom ${isSelected ? 'scale-110 drop-shadow-[0_12px_24px_rgba(0,0,0,0.2)]' : 'hover:scale-105 hover:-translate-y-0.5'}`}>
     {/* Wide Soft Pastel Orange/Chalk Highlighter body with gorgeous 3D wrap */}
     <path d="M8 52 C8 52, 8 134, 8 134 C8 137.3, 13.4 140, 20 140 C26.6 140, 32 137.3, 32 134 L32 52 Z" fill="url(#highlighter3dBody)" />
     
@@ -129,7 +129,7 @@ const StandingHighlighter: React.FC<{ color: string; isSelected: boolean }> = ({
 );
 
 const StandingCalligraphy: React.FC<{ color: string; isSelected: boolean }> = ({ color, isSelected }) => (
-  <svg viewBox="0 0 40 140" className={`w-14 h-[150px] transition-all duration-300 drop-shadow-[0_6px_8px_rgba(0,0,0,0.12)] origin-bottom ${isSelected ? 'scale-110 drop-shadow-[0_12px_24px_rgba(0,0,0,0.2)]' : 'hover:scale-105 hover:-translate-y-0.5'}`}>
+  <svg viewBox="0 0 40 140" className={`w-[84px] h-[155px] transition-all duration-300 drop-shadow-[0_6px_8px_rgba(0,0,0,0.12)] origin-bottom ${isSelected ? 'scale-110 drop-shadow-[0_12px_24px_rgba(0,0,0,0.2)]' : 'hover:scale-105 hover:-translate-y-0.5'}`}>
     {/* Realistic bamboo handle */}
     <path d="M17 48 C17 48, 17 138, 17 138 C17 139, 18.3 140, 20 140 C21.7 140, 23 139, 23 138 L23 48 Z" fill="url(#bambooWood)" />
     
@@ -181,7 +181,7 @@ const StandingCalligraphy: React.FC<{ color: string; isSelected: boolean }> = ({
 );
 
 const StandingDashed: React.FC<{ color: string; isSelected: boolean }> = ({ color, isSelected }) => (
-  <svg viewBox="0 0 40 140" className={`w-14 h-[150px] transition-all duration-300 drop-shadow-[0_6px_8px_rgba(0,0,0,0.12)] origin-bottom ${isSelected ? 'scale-110 drop-shadow-[0_12px_24px_rgba(0,0,0,0.2)]' : 'hover:scale-105 hover:-translate-y-0.5'}`}>
+  <svg viewBox="0 0 40 140" className={`w-[84px] h-[155px] transition-all duration-300 drop-shadow-[0_6px_8px_rgba(0,0,0,0.12)] origin-bottom ${isSelected ? 'scale-110 drop-shadow-[0_12px_24px_rgba(0,0,0,0.2)]' : 'hover:scale-105 hover:-translate-y-0.5'}`}>
     {/* Tech fineliner body (Matte Teal finish with gorgeous 3D cylindrical shader) */}
     <path d="M13 52 L27 52 L27 137 C27 138.5, 24 140, 20 140 C16 140, 13 138.5, 13 137 Z" fill="url(#finelinerBody)" />
     
@@ -222,7 +222,7 @@ const StandingDashed: React.FC<{ color: string; isSelected: boolean }> = ({ colo
 );
 
 const StandingCrayon: React.FC<{ color: string; isSelected: boolean }> = ({ color, isSelected }) => (
-  <svg viewBox="0 0 40 140" className={`w-14 h-[150px] transition-all duration-300 drop-shadow-[0_6px_8px_rgba(0,0,0,0.12)] origin-bottom ${isSelected ? 'scale-110 drop-shadow-[0_12px_24px_rgba(0,0,0,0.2)]' : 'hover:scale-105 hover:-translate-y-0.5'}`}>
+  <svg viewBox="0 0 40 140" className={`w-[84px] h-[155px] transition-all duration-300 drop-shadow-[0_6px_8px_rgba(0,0,0,0.12)] origin-bottom ${isSelected ? 'scale-110 drop-shadow-[0_12px_24px_rgba(0,0,0,0.2)]' : 'hover:scale-105 hover:-translate-y-0.5'}`}>
     {/* 3D Wax Crayon Body Core (glorious cylindrical light shader) */}
     <path d="M11 44 C11 44, 11 138, 11 138 C11 139, 14 140, 20 140 C26 140, 29 139, 29 138 L29 44 Z" fill={color} />
     <path d="M11 44 L29 44 L29 138 L11 138 Z" fill="url(#crayonCylinderShade)" style={{ mixBlendMode: 'multiply' }} opacity="0.35" />
@@ -270,7 +270,7 @@ const StandingCrayon: React.FC<{ color: string; isSelected: boolean }> = ({ colo
 );
 
 const StandingRainbow: React.FC<{ isSelected: boolean }> = ({ isSelected }) => (
-  <svg viewBox="0 0 40 140" className={`w-[68px] h-[150px] transition-all duration-300 drop-shadow-[0_6px_8px_rgba(0,0,0,0.12)] origin-bottom ${isSelected ? 'scale-110 drop-shadow-[0_12px_24px_rgba(0,0,0,0.2)]' : 'hover:scale-105 hover:-translate-y-0.5'}`}>
+  <svg viewBox="0 0 40 140" className={`w-[102px] h-[155px] transition-all duration-300 drop-shadow-[0_6px_8px_rgba(0,0,0,0.12)] origin-bottom ${isSelected ? 'scale-110 drop-shadow-[0_12px_24px_rgba(0,0,0,0.2)]' : 'hover:scale-105 hover:-translate-y-0.5'}`}>
     {/* Dark contours to make silver rod stand out against lighter backgrounds */}
     <path d="M20 75 L20 138" stroke="#1E293B" strokeWidth="6.5" strokeLinecap="round" opacity="0.9" />
     <path d="M6 46 L6 75 L34 75 L34 46" stroke="#1E293B" strokeWidth="5" fill="none" strokeLinecap="round" opacity="0.9" />
@@ -339,6 +339,7 @@ interface BottomPanelProps {
   onSelectPaper: (type: string, bgColor: string) => void;
   // Current board state
   currentBg: BackgroundType;
+  setActiveTool?: (tool: any) => void;
 }
 
 export const BottomPanel: React.FC<BottomPanelProps> = ({
@@ -358,6 +359,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
   onSelectTape,
   onSelectPaper,
   currentBg,
+  setActiveTool,
 }) => {
   const [selectedStickerTag, setSelectedStickerTag] = useState<'all' | 'illustration' | 'basic' | 'weather' | 'emotion' | 'check'>('all');
 
@@ -543,7 +545,12 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id);
+                if ((tab.id === 'pen' || tab.id === 'color') && setActiveTool) {
+                  setActiveTool('pen');
+                }
+              }}
               className={`flex-1 min-w-[112px] py-6 text-center text-[32px] transition-all duration-300 relative leading-none shrink-0 cursor-pointer ${
                 isActive ? 'text-[#006CFF] font-bold text-[34px]' : 'text-slate-400 font-normal hover:text-slate-600'
               }`}
@@ -588,6 +595,9 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
                         setBrushType(item.id as any);
                         setPenOpacity(item.opacity);
                         setPenWidth(item.width);
+                        if (setActiveTool) {
+                          setActiveTool('pen');
+                        }
                       }}
                       className="flex-1 flex flex-col items-center justify-end h-full relative cursor-pointer focus:outline-none group select-none"
                     >
@@ -656,7 +666,15 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
                 사용자 정의 색상
               </span>
               <div className="flex justify-center py-1">
-                <ColorWheel penColor={penColor} setPenColor={setPenColor} />
+                <ColorWheel 
+                  penColor={penColor} 
+                  setPenColor={(color) => {
+                    setPenColor(color);
+                    if (setActiveTool) {
+                      setActiveTool('pen');
+                    }
+                  }} 
+                />
               </div>
             </div>
 
@@ -682,7 +700,12 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
                   return (
                     <button
                       key={`palette-${colorHex}`}
-                      onClick={() => setPenColor(colorHex)}
+                      onClick={() => {
+                        setPenColor(colorHex);
+                        if (setActiveTool) {
+                          setActiveTool('pen');
+                        }
+                      }}
                       style={{ backgroundColor: colorHex }}
                       className={`aspect-square rounded-xl border cursor-pointer transition-all active:scale-90 ${
                         isSelected
@@ -706,6 +729,9 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
                       const val = e.target.value.trim();
                       if (val.length <= 6) {
                         setPenColor('#' + val);
+                        if (setActiveTool && val.length === 6) {
+                          setActiveTool('pen');
+                        }
                       }
                     }}
                     placeholder="FFFFFF"

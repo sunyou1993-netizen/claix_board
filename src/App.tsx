@@ -378,6 +378,7 @@ export default function App() {
           onSelectTape={handleSpawnTape}
           onSelectPaper={handleSpawnPaper}
           currentBg={background}
+          setActiveTool={setActiveTool}
         />
 
         {/* INTERACTIVE POPUP MODALS */}
