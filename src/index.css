@@ -1,0 +1,119 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700;800&family=Nanum+Pen+Script&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --font-hand: "Nanum Pen Script", cursive;
+}
+
+/* Scrollbar suppression for ultra clean board spaces */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Global full-viewport reset, preventing bounce and scroll on mobile screens */
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #D5E6F7;
+  font-family: var(--font-sans);
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Smooth canvas shadow transitions */
+.group-canvas:hover {
+  box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+/* Curated tactile giant slider styling, exactly 2x height and beautifully responsive */
+.giant-custom-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 32px !important;
+  border-radius: 9999px !important;
+  background: #E2E8F0 !important;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.giant-custom-slider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 32px;
+  cursor: pointer;
+  background: transparent;
+  border-radius: 9999px;
+  border: none;
+}
+
+.giant-custom-slider::-webkit-slider-thumb {
+  height: 48px;
+  width: 48px;
+  border-radius: 9999px;
+  background: #006CFF;
+  border: 4px solid #ffffff;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -8px; /* centers nicely in 32px track */
+  box-shadow: 0 4px 12px rgba(0, 108, 255, 0.35), 0 2px 4px rgba(0, 0, 0, 0.08);
+  transition: transform 0.1s ease, background-color 0.2s ease;
+}
+
+.giant-custom-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.08);
+  background-color: #005AD4;
+}
+
+.giant-custom-slider::-webkit-slider-thumb:active {
+  transform: scale(0.96);
+  background-color: #004BB0;
+}
+
+/* Firefox compatibility */
+.giant-custom-slider::-moz-range-track {
+  width: 100%;
+  height: 32px;
+  cursor: pointer;
+  background: transparent;
+  border-radius: 9999px;
+}
+
+.giant-custom-slider::-moz-range-thumb {
+  height: 48px;
+  width: 48px;
+  border-radius: 9999px;
+  background: #006CFF;
+  border: 4px solid #ffffff;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 108, 255, 0.35), 0 2px 4px rgba(0, 0, 0, 0.08);
+  transition: transform 0.1s ease, background-color 0.2s ease;
+}
+
+.giant-custom-slider::-moz-range-thumb:hover {
+  transform: scale(1.08);
+  background-color: #005AD4;
+}
+
+.giant-custom-slider::-moz-range-thumb:active {
+  transform: scale(0.96);
+  background-color: #004BB0;
+}
+
