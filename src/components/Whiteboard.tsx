@@ -353,27 +353,71 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
     }
 
     if (type === 'calligraphy') {
-      // Parallel thin strokes rendering to mimic a chiseled font/nib
-      const stepValue = Math.max(1, width / 7);
-      for (let offset = -width / 2; offset <= width / 2; offset += stepValue) {
-        ctx.beginPath();
-        ctx.lineWidth = Math.max(1, width / 6);
-        ctx.moveTo(points[0].x + offset, points[0].y + offset);
-        for (let i = 1; i < points.length - 1; i++) {
-          const xc = (points[i].x + points[i + 1].x) / 2;
-          const yc = (points[i].y + points[i + 1].y) / 2;
-          ctx.quadraticCurveTo(points[i].x + offset, points[i].y + offset, xc + offset, yc + offset);
-        }
-        ctx.lineTo(points[points.length - 1].x + offset, points[points.length - 1].y + offset);
-        ctx.stroke();
-      }
-    } else if (type === 'crayon') {
-      // 1. Draw core line with slightly lower opacity and dashed pattern for a grainy substrate feel
-      ctx.strokeStyle = color;
-      ctx.lineWidth = width;
-      ctx.globalAlpha = opacity * 0.45;
-      ctx.setLineDash([1, width * 0.4]);
+      // High-performance dynamic multi-bristle calligraphy brush engine
+      // Simulates real hair tips spreading, organic density, and variable line-width texturing
+      const bristleCount = 8;
+      const bristles: { dx: number; dy: number; alpha: number; weight: number }[] = [];
       
+      // Seed beautiful hair distribution inside the brush head radius
+      for (let b = 0; b < bristleCount; b++) {
+        const angle = (b / bristleCount) * Math.PI * 2;
+        const distance = (0.15 + Math.random() * 0.8) * (width * 0.42);
+        bristles.push({
+          dx: Math.cos(angle) * distance,
+          dy: Math.sin(angle) * distance,
+          alpha: 0.3 + Math.random() * 0.5,
+          weight: 0.45 + Math.random() * 0.55
+        });
+      }
+
+      // Draw each bristle stream individually
+      bristles.forEach((bristle) => {
+        ctx.save();
+        ctx.lineWidth = Math.max(0.65, width * 0.22 * bristle.weight);
+        ctx.strokeStyle = color;
+        
+        ctx.beginPath();
+        let prevPt = points[0];
+        ctx.moveTo(prevPt.x + bristle.dx, prevPt.y + bristle.dy);
+
+        for (let i = 1; i < points.length; i++) {
+          const currPt = points[i];
+          const dx = currPt.x - prevPt.x;
+          const dy = currPt.y - prevPt.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          
+          // Speed factor (longer segments indicate rapid motion -> bristles stretch and fade out)
+          const speedFactor = Math.min(2.4, Math.max(0.35, dist / 3.8));
+          
+          // Organic bristle drift
+          const spreadX = bristle.dx * speedFactor;
+          const spreadY = bristle.dy * speedFactor;
+          
+          // Dry-out effect at high speed
+          ctx.globalAlpha = opacity * bristle.alpha * (1.12 - Math.min(0.6, dist / 20.0));
+
+          const cx = (prevPt.x + currPt.x) / 2;
+          const cy = (prevPt.y + currPt.y) / 2;
+          
+          ctx.quadraticCurveTo(
+            prevPt.x + spreadX, 
+            prevPt.y + spreadY, 
+            cx + spreadX, 
+            cy + spreadY
+          );
+          
+          prevPt = currPt;
+        }
+        ctx.lineTo(points[points.length - 1].x + bristle.dx, points[points.length - 1].y + bristle.dy);
+        ctx.stroke();
+        ctx.restore();
+      });
+
+      // Overlay an organic central ink core to weld the bristle paths beautifully
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width * 0.48;
+      ctx.globalAlpha = opacity * 0.76;
       ctx.beginPath();
       ctx.moveTo(points[0].x, points[0].y);
       for (let i = 1; i < points.length - 1; i++) {
@@ -383,11 +427,34 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
       }
       ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
       ctx.stroke();
+      ctx.restore();
+    } else if (type === 'crayon') {
+      // Premium wax oil crayon engine with real-world paper tooth porosity and powdery wax crumble debris
+      // 1. Draw central textured core using triple jittered micro-dash paths
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.globalAlpha = opacity * 0.38;
+      
+      for (let lineOffset = 0; lineOffset < 3; lineOffset++) {
+        const rx = (Math.random() - 0.5) * (width * 0.18);
+        const ry = (Math.random() - 0.5) * (width * 0.18);
+        
+        ctx.setLineDash([1.8, Math.max(1.2, width * (0.35 + Math.random() * 0.45))]);
+        ctx.beginPath();
+        ctx.moveTo(points[0].x + rx, points[0].y + ry);
+        for (let i = 1; i < points.length - 1; i++) {
+          const xc = (points[i].x + points[i + 1].x) / 2;
+          const yc = (points[i].y + points[i + 1].y) / 2;
+          ctx.quadraticCurveTo(points[i].x + rx, points[i].y + ry, xc + rx, yc + ry);
+        }
+        ctx.lineTo(points[points.length - 1].x + rx, points[points.length - 1].y + ry);
+        ctx.stroke();
+      }
+      ctx.restore();
 
-      // Clear dash to render scattered grains
-      ctx.setLineDash([]);
-
-      // 2. Scatter particles along the line for that perfect hand-drawn wax crayon crumble texture
+      // 2. High-fidelity wax flaking & crumble splatter
+      ctx.save();
       ctx.fillStyle = color;
       
       for (let i = 0; i < points.length - 1; i++) {
@@ -397,33 +464,40 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
         const dy = p2.y - p1.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         
-        // Count of specks scales with distance between points
-        const specks = Math.max(3, Math.floor(dist / 2));
+        const specks = Math.max(2, Math.floor(dist / 1.4));
         for (let j = 0; j <= specks; j++) {
           const ratio = j / specks;
           const cx = p1.x + dx * ratio;
           const cy = p1.y + dy * ratio;
           
-          // Scatter particles around the line in a circle corresponding to the width
-          const numParticles = 4;
-          for (let p = 0; p < numParticles; p++) {
+          const flakeDensity = Math.max(3, Math.floor(width / 2.2));
+          for (let p = 0; p < flakeDensity; p++) {
             const angle = Math.random() * Math.PI * 2;
-            const r = Math.random() * (width / 2);
+            const distanceRatio = Math.pow(Math.random(), 1.6); // heavily dynamic cluster concentration
+            const r = distanceRatio * (width * 0.58);
             const px = cx + Math.cos(angle) * r;
             const py = cy + Math.sin(angle) * r;
             
-            // Random grain diameter
-            const d = 1.0 + Math.random() * 2.5;
-            
-            ctx.globalAlpha = opacity * (0.3 + Math.random() * 0.55);
+            const crumbSize = 0.8 + Math.random() * (width * 0.32);
+            ctx.globalAlpha = opacity * (0.12 + Math.random() * 0.78);
             ctx.beginPath();
-            ctx.arc(px, py, d / 2, 0, Math.PI * 2);
+            
+            // Render non-uniform wax textures using ellipse or arc
+            if (p % 2 === 0) {
+              const rx = crumbSize / 2;
+              const ry = crumbSize * (0.35 + Math.random() * 0.45);
+              const rot = Math.random() * Math.PI;
+              ctx.ellipse(px, py, rx, ry, rot, 0, Math.PI * 2);
+            } else {
+              ctx.arc(px, py, crumbSize / 2, 0, Math.PI * 2);
+            }
             ctx.fill();
           }
         }
       }
+      ctx.restore();
     } else if (type === 'rainbow') {
-      // Vibrant Parallel rainbow stripes representing a true paint roller cartridge!
+      // Professional multi-band paint roller engine with porous foam bubbles and sponge edge bleeding
       const rainbowColors = [
         '#EF4444', // Red
         '#F97316', // Orange
@@ -433,7 +507,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
         '#8B5CF6'  // Purple
       ];
 
-      const stripeWidth = width / 4.8; // allow slight overlap to prevent sewing-line gaps
+      const stripeWidth = width / 4.4; // slight overlap for a blended wet paint-bead flow
 
       for (let i = 0; i < points.length - 1; i++) {
         const p1 = points[i];
@@ -446,7 +520,11 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
         const nx = -dy / dist;
         const ny = dx / dist;
 
-        // Draw each colored stripe track in the segment
+        ctx.save();
+        ctx.globalAlpha = opacity;
+        ctx.lineCap = 'butt'; // pristine segment transitions
+
+        // Draw individual colored paint lanes
         rainbowColors.forEach((stripeColor, index) => {
           const offsetRatio = index - (rainbowColors.length - 1) / 2;
           const offsetDistance = offsetRatio * (width / rainbowColors.length);
@@ -463,33 +541,118 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
           ctx.lineTo(sp2x, sp2y);
           ctx.stroke();
         });
+        ctx.restore();
 
-        // Add sponge pores (texture specks in paper background color) to simulate natural sponge roller ink transfer pores
-        const paperColor = background === 'blackboard' ? '#134E4A' : (background === 'kraft' ? '#E8C595' : '#FDFBF7');
-        ctx.fillStyle = paperColor;
+        // 1. Sponge outer boundary bleeding
+        ctx.save();
+        const leftColor = rainbowColors[0];
+        const rightColor = rainbowColors[rainbowColors.length - 1];
         
-        const texturability = Math.max(2, Math.floor(dist / 3.5));
-        for (let t = 0; t < texturability; t++) {
-          const ratio = t / texturability;
+        const edgeSteps = Math.max(1, Math.floor(dist / 2.2));
+        for (let e = 0; e <= edgeSteps; e++) {
+          const ratio = e / edgeSteps;
           const cx = p1.x + dx * ratio;
           const cy = p1.y + dy * ratio;
 
-          // Scatter a couple of paper-colored speck pores in the stroke path to break up solid lines
-          const noiseCount = 3;
-          for (let n = 0; n < noiseCount; n++) {
+          // Left border dabs
+          const leftOffset = -0.5 * width;
+          const lx = cx + nx * leftOffset;
+          const ly = cy + ny * leftOffset;
+          
+          ctx.fillStyle = leftColor;
+          ctx.globalAlpha = opacity * (0.32 + Math.random() * 0.58);
+          ctx.beginPath();
+          ctx.arc(lx + (Math.random() - 0.5) * (width * 0.14), ly + (Math.random() - 0.5) * (width * 0.14), 0.7 + Math.random() * 2.3, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Right border dabs
+          const rightOffset = 0.5 * width;
+          const rx = cx + nx * rightOffset;
+          const ry = cy + ny * rightOffset;
+          
+          ctx.fillStyle = rightColor;
+          ctx.globalAlpha = opacity * (0.32 + Math.random() * 0.58);
+          ctx.beginPath();
+          ctx.arc(rx + (Math.random() - 0.5) * (width * 0.14), ry + (Math.random() - 0.5) * (width * 0.14), 0.7 + Math.random() * 2.3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+
+        // 2. Realistic internal foam porous bubble voids
+        ctx.save();
+        const paperColor = background === 'blackboard' ? '#134E4A' : (background === 'kraft' ? '#E8C595' : '#FDFBF7');
+        ctx.fillStyle = paperColor;
+        
+        const bubbleDensity = Math.max(2, Math.floor(dist / 1.8));
+        for (let t = 0; t < bubbleDensity; t++) {
+          const ratio = t / bubbleDensity;
+          const cx = p1.x + dx * ratio;
+          const cy = p1.y + dy * ratio;
+
+          const bubblesPerStep = 2 + Math.floor(width / 5.5);
+          for (let b = 0; b < bubblesPerStep; b++) {
             const angle = Math.random() * Math.PI * 2;
-            const r = Math.random() * (width / 2);
+            const r = Math.random() * (width * 0.43); // restrict inside roller track safely
             const px = cx + Math.cos(angle) * r;
             const py = cy + Math.sin(angle) * r;
 
-            const poreSize = 1.0 + Math.random() * 2.8;
-            ctx.globalAlpha = opacity * (0.2 + Math.random() * 0.4); // semi-translucent gaps
+            const bubbleRadius = 0.6 + Math.random() * 2.3;
+            ctx.globalAlpha = opacity * (0.12 + Math.random() * 0.46);
             ctx.beginPath();
-            ctx.arc(px, py, poreSize / 2, 0, Math.PI * 2);
+            ctx.arc(px, py, bubbleRadius, 0, Math.PI * 2);
             ctx.fill();
           }
         }
+        ctx.restore();
       }
+    } else if (type === 'pen' || type === 'default' || !['dashed', 'calligraphy', 'crayon', 'rainbow', 'highlighter'].includes(type)) {
+      // Majestic fountain gel pen with ink accumulation hotspots & liquid gel-sheen dual core shading
+      // 1. Draw smooth fluid solid gel track
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length - 1; i++) {
+        const xc = (points[i].x + points[i + 1].x) / 2;
+        const yc = (points[i].y + points[i + 1].y) / 2;
+        ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+      }
+      ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
+      ctx.stroke();
+
+      // 2. Ink Core concentration (gorgeous liquid gel pen core shading effect)
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width * 0.68;
+      ctx.globalAlpha = opacity * 0.48;
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length - 1; i++) {
+        const xc = (points[i].x + points[i + 1].x) / 2;
+        const yc = (points[i].y + points[i + 1].y) / 2;
+        ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+      }
+      ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
+      ctx.stroke();
+      ctx.restore();
+
+      // 3. Realistic wet ink pooling hotspots (ink accumulates heavily at the start, end, and sharp turning vertices)
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.globalAlpha = opacity * 0.28;
+      
+      // Wet start point pool
+      ctx.beginPath();
+      ctx.arc(points[0].x, points[0].y, width * 0.72, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Intermediate turning & endpoint pools
+      const poolInterval = Math.max(1, Math.floor(points.length / 4.5));
+      for (let i = poolInterval; i < points.length; i += poolInterval) {
+        const p = points[Math.min(i, points.length - 1)];
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, width * 0.64, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
     } else {
       ctx.beginPath();
       ctx.moveTo(points[0].x, points[0].y);
