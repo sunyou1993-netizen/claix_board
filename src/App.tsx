@@ -56,6 +56,7 @@ export default function App() {
   // Sub-tool contextual states
   const [selectedShapeType, setSelectedShapeType] = useState<'rectangle' | 'circle' | 'triangle' | 'arrow'>('rectangle');
   const [selectedRulerType, setSelectedRulerType] = useState<'line' | 'triangle' | 'circle'>('line');
+  const [eraserWidth, setEraserWidth] = useState<number>(24);
 
   const handleSelectRulerType = (type: 'line' | 'triangle' | 'circle') => {
     setSelectedRulerType(type);
@@ -336,6 +337,7 @@ export default function App() {
           setSelectedShapeType={setSelectedShapeType}
           selectedRulerType={selectedRulerType}
           setSelectedRulerType={setSelectedRulerType}
+          eraserWidth={eraserWidth}
         />
 
         {/* Vertical Spacing element */}
@@ -355,6 +357,8 @@ export default function App() {
           setSelectedShapeType={setSelectedShapeType}
           selectedRulerType={selectedRulerType}
           setSelectedRulerType={handleSelectRulerType}
+          eraserWidth={eraserWidth}
+          setEraserWidth={setEraserWidth}
         />
 
         {/* Vertical Spacing element */}

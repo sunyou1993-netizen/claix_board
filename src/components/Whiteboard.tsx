@@ -42,6 +42,7 @@ interface WhiteboardProps {
   setSelectedShapeType: (type: 'rectangle' | 'circle' | 'triangle' | 'arrow') => void;
   selectedRulerType: 'line' | 'triangle' | 'circle';
   setSelectedRulerType: (type: 'line' | 'triangle' | 'circle') => void;
+  eraserWidth: number;
 }
 
 // Seedable pseudo-random number generator (Mulberry32)
@@ -107,6 +108,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
   setSelectedShapeType,
   selectedRulerType,
   setSelectedRulerType,
+  eraserWidth,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -114,7 +116,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
   const [currentStroke, setCurrentStroke] = useState<Point[]>([]);
 
   const eraseStrokesAtSegment = (pA: Point, pB: Point) => {
-    const eraserRadius = 24; // Eraser size matching visual brush
+    const eraserRadius = eraserWidth; // Eraser size matching visual brush
     let strokeChanged = false;
     const updatedStrokes: Stroke[] = [];
 
@@ -253,13 +255,13 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
       ctx.lineWidth = 1.5;
       ctx.setLineDash([4, 4]); // dashed ring representation
       ctx.beginPath();
-      ctx.arc(hoverPt.x, hoverPt.y, 24, 0, 2 * Math.PI); // 24px radius
+      ctx.arc(hoverPt.x, hoverPt.y, eraserWidth, 0, 2 * Math.PI); // dynamic radius
       ctx.stroke();
 
       // soft semi-transparent core filled shape
       ctx.fillStyle = 'rgba(244, 63, 94, 0.08)';
       ctx.beginPath();
-      ctx.arc(hoverPt.x, hoverPt.y, 24, 0, 2 * Math.PI);
+      ctx.arc(hoverPt.x, hoverPt.y, eraserWidth, 0, 2 * Math.PI);
       ctx.fill();
 
       ctx.restore();
@@ -1014,7 +1016,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
         currentStroke,
         'eraser',
         'rgba(244, 63, 94, 0.25)', // beautiful translucent rose
-        48, // 48px thick visual representation matching eraser 24px radius
+        eraserWidth * 2, // dynamic thickness matching eraser radius
         1.0,
         "active_eraser_stroke"
       );

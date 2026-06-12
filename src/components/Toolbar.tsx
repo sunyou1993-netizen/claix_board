@@ -33,6 +33,8 @@ interface ToolbarProps {
   setSelectedShapeType: (type: 'rectangle' | 'circle' | 'triangle' | 'arrow') => void;
   selectedRulerType: 'line' | 'triangle' | 'circle';
   setSelectedRulerType: (type: 'line' | 'triangle' | 'circle') => void;
+  eraserWidth: number;
+  setEraserWidth: (width: number) => void;
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
@@ -48,6 +50,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   setSelectedShapeType,
   selectedRulerType,
   setSelectedRulerType,
+  eraserWidth,
+  setEraserWidth,
 }) => {
   // Setup dynamically tracked recent colors (up to 5) initialized with default palette
   const [recentColors, setRecentColors] = React.useState<string[]>([
@@ -173,6 +177,43 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                       }`}
                     >
                       <span className="text-[22px]">{rl.icon}</span><span>{rl.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* C. Contextual floating Eraser size adjustment popup */}
+              {tool.id === 'eraser' && isActive && (
+                <div className="absolute bottom-[calc(100%+22px)] left-1/2 transform -translate-x-1/2 bg-white border-2 border-slate-200/85 rounded-[28px] py-4 px-6 shadow-[0_24px_55px_rgba(0,0,0,0.16)] flex items-center gap-4 z-50 select-none animate-fade-in whitespace-nowrap">
+                  <span className="text-slate-400 font-normal text-[16px] mr-1.5">두께:</span>
+                  {[
+                    { id: 10, label: '초미세', displaySize: 6 },
+                    { id: 20, label: '세밀하게', displaySize: 10 },
+                    { id: 36, label: '적당히', displaySize: 16 },
+                    { id: 56, label: '두껍게', displaySize: 22 },
+                    { id: 80, label: '왕지우개', displaySize: 28 },
+                  ].map((sz) => (
+                    <button
+                      key={sz.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEraserWidth(sz.id);
+                      }}
+                      className={`px-4 py-2.5 rounded-2xl font-normal text-[17px] tracking-tight transition cursor-pointer select-none flex items-center gap-2 ${
+                        eraserWidth === sz.id
+                          ? 'bg-[#006CFF] text-white shadow-md font-medium'
+                          : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span
+                        className="rounded-full inline-block transition-colors"
+                        style={{
+                          width: `${sz.displaySize}px`,
+                          height: `${sz.displaySize}px`,
+                          backgroundColor: eraserWidth === sz.id ? '#FFFFFF' : '#94A3B8',
+                        }}
+                      />
+                      <span>{sz.label}</span>
                     </button>
                   ))}
                 </div>
